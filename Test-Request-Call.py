@@ -98,6 +98,92 @@ def multiply_endpoint():
             "message": f"An error occurred: {str(e)}"
         }), 500
 
+@app.route('/chatstate', methods=['POST'])
+def process_chatstate():
+    """Endpoint to process ChatState data"""
+    try:
+        data = request.get_json()
+        
+        print(f"Received ChatState data at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # Parse and summarize the ChatState data
+        summary = parse_chatstate_data(data)
+        
+        print("Parsed ChatState data successfully")
+        print("Starting 20-second countdown...")
+        
+        # Start the 20-second countdown
+        countdown_with_print(20)
+        
+        # Prepare the response
+        response = {
+            "status": "success",
+            "message": "ChatState data processed successfully after countdown",
+            "summary": summary,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        print(f"Sending ChatState response")
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Error processing ChatState: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"An error occurred processing ChatState: {str(e)}"
+        }), 500
+
+def parse_chatstate_data(data):
+    """Parse ChatState data and create a summary string"""
+    try:
+        business_name = data.get('business', {}).get('name', 'Unknown Business')
+        industry_primary = data.get('industry', {}).get('primary', 'Unknown Industry')
+        country = data.get('geography', {}).get('country', 'Unknown Country')
+        stage = data.get('stage', 'Unknown Stage')
+        language = data.get('language', 'Unknown Language')
+        
+        # Count various elements
+        questions_count = len(data.get('questions', []))
+        answers_count = len(data.get('answers', []))
+        competitors_direct = len(data.get('competitors', {}).get('direct', []))
+        competitors_indirect = len(data.get('competitors', {}).get('indirect', []))
+        pain_points_count = len(data.get('customer_pain_points', []))
+        kpis_count = len(data.get('kpis_metrics', []))
+        
+        # Get marketing channels that are enabled
+        marketing_channels = data.get('marketing_strategy', {}).get('channels', {})
+        enabled_channels = [channel for channel, enabled in marketing_channels.items() if enabled and channel != 'other']
+        
+        # Create summary string
+        summary = f"""
+ChatState Analysis Summary:
+==========================
+Business Information:
+- Name: {business_name}
+- Industry: {industry_primary}
+- Location: {country}
+- Language: {language}
+- Current Stage: {stage}
+
+Data Metrics:
+- Questions: {questions_count}
+- Answers: {answers_count}
+- Direct Competitors: {competitors_direct}
+- Indirect Competitors: {competitors_indirect}
+- Customer Pain Points: {pain_points_count}
+- KPIs/Metrics: {kpis_count}
+
+Marketing Strategy:
+- Active Channels: {', '.join(enabled_channels) if enabled_channels else 'None specified'}
+
+Processing completed successfully!
+        """.strip()
+        
+        return summary
+        
+    except Exception as e:
+        return f"Error parsing ChatState data: {str(e)}"
+
 @app.route('/test', methods=['GET'])
 def test_endpoint():
     # Simple test endpoint you can call to verify the app works
